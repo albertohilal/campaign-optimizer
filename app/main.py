@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from app.config import get_settings
 from app.database import init_db
 from app.logger import get_logger
+from app.routes.analysis import router as analysis_router
 from app.routes.campaigns import router as campaigns_router
 from app.routes.health import router as health_router
 from app.schemas import RootResponse
@@ -24,8 +25,11 @@ async def lifespan(_: FastAPI):
 
     logger.info("Starting %s in %s mode", settings.app_name, settings.app_env)
     logger.info("Mock Google Ads mode: %s", settings.mock_google_ads_mode)
+
     init_db()
+
     yield
+
     logger.info("Shutting down %s", settings.app_name)
 
 
@@ -35,6 +39,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Register routers
+app.include_router(analysis_router)
 app.include_router(campaigns_router)
 app.include_router(health_router)
 
