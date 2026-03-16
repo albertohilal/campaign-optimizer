@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from app.config import get_settings
 from app.database import init_db
 from app.logger import get_logger
+from app.routes.campaigns import router as campaigns_router
 from app.routes.health import router as health_router
 from app.schemas import RootResponse
 
@@ -34,6 +35,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(campaigns_router)
 app.include_router(health_router)
 
 
