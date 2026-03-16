@@ -36,19 +36,16 @@ class AnalysisReport(Base):
     summary: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        repr=False,
     )
 
     findings_json: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        repr=False,
     )
 
     recommendations_json: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        repr=False,
     )
 
     created_at: Mapped[datetime] = mapped_column(
