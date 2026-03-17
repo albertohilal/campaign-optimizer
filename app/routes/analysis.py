@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 
 from app.services.analyzer import AnalyzerService
+from app.services.campaign_diagnosis import CampaignDiagnosisService
 from app.services.google_ads_client import GoogleAdsServiceError
 from app.services.metrics_service import MetricsService
 from app.services.recommendations import RecommendationsService
@@ -128,4 +129,41 @@ def get_analysis_report(date_from: str, date_to: str) -> dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Report data is not available for the current Google Ads configuration.",
+        ) from exc
+
+
+@router.get("/analysis/campaign-diagnosis")
+def get_campaign_diagnosis(
+    date_from: str,
+    date_to: str,
+    campaign_id: str | None = None,
+) -> dict[str, Any]:
+    """Return a compact campaign diagnosis summary built from existing analysis artifacts."""
+
+    try:
+        snapshot, findings_payload = _build_snapshot_and_findings(date_from, date_to)
+        recommendations_service = RecommendationsService()
+        recommendations_payload = recommendations_service.build_recommendations(
+            findings=findings_payload.get("findings", []),
+        )
+        diagnosis_service = CampaignDiagnosisService(
+            recommendations_service=recommendations_service,
+        )
+        return diagnosis_service.build_campaign_diagnosis(
+            snapshot=snapshot,
+            findings_payload=findings_payload,
+            recommendations_payload=recommendations_payload,
+            campaign_id=campaign_id,
+        )
+
+    except GoogleAdsServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    except NotImplementedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Campaign diagnosis is not available for the current Google Ads configuration.",
         ) from exc
