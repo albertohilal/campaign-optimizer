@@ -37,3 +37,7 @@ dist/
 # Data outputs
 data/reports/*
 !data/reports/.gitkeep
+
+AUXILIAR/
+
+generate_refresh_token.py
