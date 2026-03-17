@@ -222,21 +222,28 @@ class CampaignDiagnosisService:
             current = terms.get(search_term)
             clicks = self._to_float(metadata.get("clicks"))
             conversions = self._to_float(metadata.get("conversions"))
+            cost = self._waste_cost(metadata)
 
             if current is None:
                 terms[search_term] = {
                     "search_term": search_term,
                     "clicks": int(clicks),
                     "conversions": conversions,
+                    "cost": round(cost, 2),
                 }
                 continue
 
-            current["clicks"] = max(int(current.get("clicks", 0)), int(clicks))
+            current["clicks"] += int(clicks)
             current["conversions"] = min(self._to_float(current.get("conversions")), conversions)
+            current["cost"] = round(self._to_float(current.get("cost")) + cost, 2)
 
         return sorted(
             terms.values(),
-            key=lambda item: (-int(item.get("clicks", 0)), item["search_term"]),
+            key=lambda item: (
+                -self._to_float(item.get("cost")),
+                -int(item.get("clicks", 0)),
+                item["search_term"],
+            ),
         )[:5]
 
     def _build_recommended_priorities(
@@ -299,6 +306,19 @@ class CampaignDiagnosisService:
             if campaign_name:
                 return str(campaign_name)
         return None
+
+    def _waste_cost(self, metadata: dict[str, Any]) -> float:
+        """Return waste cost from cost, then cost_micros, then clicks fallback."""
+
+        cost = self._to_float(metadata.get("cost"))
+        if cost > 0:
+            return cost
+
+        cost_micros = self._to_float(metadata.get("cost_micros"))
+        if cost_micros > 0:
+            return cost_micros / 1_000_000
+
+        return self._to_float(metadata.get("clicks"))
 
     @staticmethod
     def _severity_score(severity: str) -> int:

@@ -74,4 +74,5 @@ def test_analysis_campaign_diagnosis_returns_executive_summary() -> None:
     assert payload["campaigns"][0]["campaign_id"] == campaign_id
     assert payload["campaigns"][0]["overall_status"] in {"critical", "warning", "healthy"}
     assert isinstance(payload["campaigns"][0]["top_issues"], list)
+    assert isinstance(payload["campaigns"][0]["top_waste_search_terms"], list)
     assert isinstance(payload["campaigns"][0]["recommended_priorities"], list)

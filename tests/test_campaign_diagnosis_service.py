@@ -87,6 +87,7 @@ def test_campaign_diagnosis_deduplicates_findings_and_builds_summary() -> None:
                     "campaign_id": "1001",
                     "search_term": "cheap traffic",
                     "clicks": 8,
+                    "cost": 120.0,
                     "conversions": 0,
                 },
             },
@@ -98,6 +99,19 @@ def test_campaign_diagnosis_deduplicates_findings_and_builds_summary() -> None:
                     "campaign_id": "1001",
                     "search_term": "cheap traffic",
                     "clicks": 4,
+                    "cost_micros": 80000000,
+                    "conversions": 0,
+                },
+            },
+            {
+                "code": "search_term_without_conversions",
+                "severity": "medium",
+                "message": "Search term wasted spend.",
+                "metadata": {
+                    "campaign_id": "1001",
+                    "search_term": "many clicks low cost",
+                    "clicks": 25,
+                    "cost": 40.0,
                     "conversions": 0,
                 },
             },
@@ -145,4 +159,28 @@ def test_campaign_diagnosis_deduplicates_findings_and_builds_summary() -> None:
     assert campaign["top_issues"][0]["code"] == "spend_without_conversions"
     assert campaign["top_issues"][0]["count"] == 2
     assert campaign["top_waste_search_terms"][0]["search_term"] == "cheap traffic"
+    assert campaign["top_waste_search_terms"][0]["cost"] == 200.0
+    assert campaign["top_waste_search_terms"][1]["search_term"] == "many clicks low cost"
     assert campaign["recommended_priorities"] == ["review_search_terms", "decrease_bid"]
+
+
+def test_campaign_diagnosis_uses_clicks_when_cost_is_missing() -> None:
+    """Waste ranking should fall back to clicks when no cost fields are available."""
+
+    service = CampaignDiagnosisService()
+
+    result = service._build_top_waste_search_terms(
+        [
+            {
+                "code": "search_term_without_conversions",
+                "metadata": {"search_term": "term a", "clicks": 3},
+            },
+            {
+                "code": "search_term_without_conversions",
+                "metadata": {"search_term": "term b", "clicks": 9},
+            },
+        ]
+    )
+
+    assert result[0]["search_term"] == "term b"
+    assert result[0]["cost"] == 9.0
