@@ -12,6 +12,7 @@ from app.logger import get_logger
 from app.routes.analysis import router as analysis_router
 from app.routes.campaigns import router as campaigns_router
 from app.routes.health import router as health_router
+from app.routes.simulation import router as simulation_router
 from app.schemas import RootResponse
 
 
@@ -43,6 +44,7 @@ app = FastAPI(
 app.include_router(analysis_router)
 app.include_router(campaigns_router)
 app.include_router(health_router)
+app.include_router(simulation_router)
 
 
 @app.get("/", response_model=RootResponse)
